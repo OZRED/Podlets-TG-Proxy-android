@@ -186,8 +186,8 @@ fun SearchProxyTab(
             }
         }
 
-        // Top: Sort bar if list has proxies
-        if (state.proxies.isNotEmpty()) {
+        // Top: Sort bar if list has proxies (only for public feeds, not custom check)
+        if (state.proxies.isNotEmpty() && !state.isCustomCheck) {
             SortBar(
                 sortMode = state.sortMode,
                 onSortMode = { viewModel.setSortMode(it) }
@@ -301,23 +301,6 @@ fun SearchProxyTab(
                                     )
                                 }
                             }
-
-                            OutlinedButton(
-                                onClick = { showCustomProxyDialog = true },
-                                shape = RoundedCornerShape(20.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.check_custom_proxies),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
-                                )
-                            }
                         }
                     }
                 } else {
@@ -330,6 +313,7 @@ fun SearchProxyTab(
                         items(state.proxies, key = { it.key }) { entry ->
                             ProxyCard(
                                 entry = entry,
+                                isCustomCheck = state.isCustomCheck,
                                 isRechecking = entry.key in state.recheckingKeys,
                                 onOpen = { TelegramLauncher.openProxy(context, it) },
                                 onCopy = {
@@ -577,7 +561,7 @@ fun SearchProxyTab(
 
                     val total = state.proxies.size
 
-                    // Option 1: Native cards stack (Top 5 fastest)
+                    // Option 1: Native cards stack (or direct connect if single proxy)
                     FilledTonalButton(
                         onClick = {
                             showOpenMultipleDialog = false
@@ -587,16 +571,16 @@ fun SearchProxyTab(
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Text(
-                            text = if (total <= 5) {
-                                stringResource(R.string.open_all_stack, total)
-                            } else {
-                                stringResource(R.string.open_top_5_stack)
+                            text = when {
+                                total == 1 -> stringResource(R.string.connect_in_telegram)
+                                total <= 5 -> stringResource(R.string.open_all_stack, total)
+                                else -> stringResource(R.string.open_top_5_stack)
                             },
                             fontWeight = FontWeight.SemiBold
                         )
                     }
 
-                    // Option 2: Send all to Telegram chat / Saved Messages
+                    // Option 2: Send to Telegram chat / Saved Messages
                     Button(
                         onClick = {
                             showOpenMultipleDialog = false
@@ -606,7 +590,11 @@ fun SearchProxyTab(
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.send_all_to_telegram, total),
+                            text = if (total == 1) {
+                                stringResource(R.string.send_to_telegram)
+                            } else {
+                                stringResource(R.string.send_all_to_telegram, total)
+                            },
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -754,6 +742,7 @@ private fun SortTabItem(
 @Composable
 private fun ProxyCard(
     entry: ProxyEntry,
+    isCustomCheck: Boolean,
     isRechecking: Boolean,
     onOpen: (ProxyEntry) -> Unit,
     onCopy: () -> Unit,
@@ -831,7 +820,7 @@ private fun ProxyCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (!isRechecking && entry.isAvailable) {
+                        if (!isCustomCheck && !isRechecking && entry.isAvailable && entry.reactionsCount > 0) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = PingColor.StarGold.copy(alpha = 0.15f)

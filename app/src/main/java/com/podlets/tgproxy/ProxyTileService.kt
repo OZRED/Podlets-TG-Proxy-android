@@ -1,7 +1,9 @@
-﻿package com.podlets.tgproxy
+package com.podlets.tgproxy
 
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
@@ -41,28 +43,27 @@ class ProxyTileService : TileService() {
     override fun onClick() {
         super.onClick()
 
-        val toggleAction: () -> Unit = {
-            scope.launch {
-                val wasRunning = ProxyService.isRunning.value
-                if (wasRunning) {
-                    renderTile(Tile.STATE_INACTIVE)
-                    ProxyController.stop(this@ProxyTileService)
-                } else {
-                    val started = ProxyController.startFromSavedSettings(
-                        context = this@ProxyTileService,
-                        showInvalidPortToast = true
-                    )
-                    renderTile(
-                        if (started) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-                    )
-                }
-            }
-        }
-
-        if (isLocked) {
-            unlockAndRun(toggleAction)
+        val wasRunning = ProxyService.isRunning.value
+        if (wasRunning) {
+            renderTile(Tile.STATE_INACTIVE)
+            ProxyController.stop(applicationContext)
         } else {
-            toggleAction()
+            val intent = Intent(this, MainActivity::class.java).apply {
+                action = MainActivity.ACTION_START_PROXY
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                startActivityAndCollapse(pendingIntent)
+            } else {
+                @Suppress("DEPRECATION")
+                startActivityAndCollapse(intent)
+            }
         }
     }
 

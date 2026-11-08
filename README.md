@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Platform-Android_8.0+-3DDC84?logo=android&logoColor=white" alt="Android">
   <img src="https://img.shields.io/badge/UI-Jetpack_Compose_Material_3-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose">
   <img src="https://img.shields.io/badge/Core-Rust_JNA-DEA584?logo=rust&logoColor=white" alt="Rust Core">
-  <img src="https://img.shields.io/badge/Status-Stable_v1.0.0-success" alt="Version">
+  <img src="https://img.shields.io/badge/Status-Stable_v1.0.1-success" alt="Version">
 </p>
 
 ---

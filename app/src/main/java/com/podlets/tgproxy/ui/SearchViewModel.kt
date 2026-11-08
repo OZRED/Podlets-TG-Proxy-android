@@ -389,7 +389,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         refineTotal = 0
         refineDone = 0
         refiningPings = false
-        val sortMode = _uiState.value.sortMode
+        val sortMode = SortMode.Ping
         sortedList.setSortMode(sortMode)
 
         val checkingText = getApplication<Application>().getString(R.string.check_progress, 0, parsed.size)

@@ -63,7 +63,7 @@
     <string name="configure_dc_addresses">Настроить адреса DC</string>
     <string name="ws_pool">Пул WS</string>
     <string name="secret_key">Секретный ключ</string>
-    <string name="autostart">Автозапуск</string>
+    <string name="autostart">Автозапуск при перезагрузке</string>
     <string name="dc_addresses">Адреса датацентров</string>
     <string name="media_dcs">Медиа датацентры</string>
     <string name="experimental_mode">Экспериментальный режим</string>
@@ -137,8 +137,7 @@
     <string name="notification_stopping">Остановка прокси...</string>
     <string name="notification_channel_name">Фоновый Прокси</string>
     <string name="notification_channel_description">Уведомление о работе прокси-сервера</string>
-    <string name="notification_connect_proxy">Подключить прокси</string>
-    <string name="notification_restart">Перезапустить</string>
+    <string name="notification_connect_proxy">Подключить в Telegram</string>
     <string name="notification_disconnect">Отключить</string>
     <string name="tile_connected">Подключен</string>
     <string name="tile_disconnected">Отключен</string>
@@ -149,6 +148,8 @@
     <string name="open_top_5_stack">Открыть Топ-5 лучших (стопкой)</string>
     <string name="open_all_stack">Открыть все %1$d (стопкой)</string>
     <string name="send_all_to_telegram">Отправить все %1$d в Telegram</string>
+    <string name="connect_in_telegram">Подключить в Telegram</string>
+    <string name="send_to_telegram">Отправить в Telegram</string>
     <string name="share_proxies_title">Поделиться списком прокси</string>
     <string name="opening_in_telegram_toast">Открываем %1$d прокси в Telegram…</string>
 </resources>

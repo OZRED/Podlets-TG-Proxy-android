@@ -63,7 +63,7 @@
     <string name="configure_dc_addresses">Configure DC addresses</string>
     <string name="ws_pool">WS pool</string>
     <string name="secret_key">Secret key</string>
-    <string name="autostart">Autostart</string>
+    <string name="autostart">Autostart on boot</string>
     <string name="dc_addresses">Data center addresses</string>
     <string name="media_dcs">Media data centers</string>
     <string name="experimental_mode">Experimental mode</string>
@@ -137,8 +137,7 @@
     <string name="notification_stopping">Stopping proxy...</string>
     <string name="notification_channel_name">Background Proxy</string>
     <string name="notification_channel_description">Proxy server status notification</string>
-    <string name="notification_connect_proxy">Connect proxy</string>
-    <string name="notification_restart">Restart</string>
+    <string name="notification_connect_proxy">Connect in Telegram</string>
     <string name="notification_disconnect">Disconnect</string>
     <string name="tile_connected">Connected</string>
     <string name="tile_disconnected">Disconnected</string>
@@ -149,6 +148,8 @@
     <string name="open_top_5_stack">Open Top 5 fastest (cards)</string>
     <string name="open_all_stack">Open all %1$d (cards)</string>
     <string name="send_all_to_telegram">Send all %1$d to Telegram</string>
+    <string name="connect_in_telegram">Connect in Telegram</string>
+    <string name="send_to_telegram">Send to Telegram</string>
     <string name="share_proxies_title">Share proxies to Telegram</string>
     <string name="opening_in_telegram_toast">Opening %1$d proxies in Telegram…</string>
 </resources>

@@ -12,8 +12,8 @@ android {
     defaultConfig {
         applicationId = "com.podlets.tgproxy"
         targetSdk = 35
-        versionCode = 100
-        versionName = "1.0.0"
+        versionCode = 101
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -116,6 +116,9 @@ android {
     }
     // composeOptions removed — AGP 9.x handles Compose compiler internally
     packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }

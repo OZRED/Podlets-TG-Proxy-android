@@ -1,28 +1,53 @@
-﻿package com.podlets.tgproxy
+package com.podlets.tgproxy
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.first
 
+data class ProxyLaunchConfig(
+    val bindIp: String,
+    val port: Int,
+    val ips: String,
+    val poolSize: Int,
+    val cfEnabled: Boolean,
+    val cfPriority: Boolean,
+    val cfDomain: String,
+    val secretKey: String
+)
+
 object ProxyController {
 
-    suspend fun startFromSavedSettings(
-        context: Context,
-        showInvalidPortToast: Boolean = false
-    ): Boolean {
+    private const val TAG = "ProxyController"
+
+    /**
+     * Synchronous fast start targeting ProxyService with ACTION_START.
+     * Guaranteed to execute within the immediate user click interaction window
+     * (e.g. from Quick Settings Tile) to prevent ForegroundServiceStartNotAllowedException on Android 12+.
+     */
+    fun startSync(context: Context): Boolean {
+        return try {
+            val appContext = context.applicationContext
+            ContextCompat.startForegroundService(
+                appContext,
+                Intent(appContext, ProxyService::class.java).apply {
+                    action = ProxyService.ACTION_START
+                }
+            )
+            true
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to start foreground service synchronously", e)
+            false
+        }
+    }
+
+    suspend fun loadConfig(context: Context): ProxyLaunchConfig? {
         val settingsStore = SettingsStore(context)
         settingsStore.migrateLegacyDefaults()
         val portText = settingsStore.port.first()
-        val port = portText.toIntOrNull()
-        if (port == null) {
-            if (showInvalidPortToast) {
-                Toast.makeText(context, context.getString(R.string.invalid_port), Toast.LENGTH_SHORT).show()
-            }
-            ProxyTileService.requestSync(context)
-            return false
-        }
+        val port = portText.toIntOrNull() ?: return null
 
         val bindIp = settingsStore.bindIp.first()
         val isExperimental = settingsStore.isExperimentalMode.first()
@@ -53,37 +78,69 @@ object ProxyController {
             }
         }.joinToString(",")
 
-        ContextCompat.startForegroundService(
-            context,
-            Intent(context, ProxyService::class.java).apply {
-                action = ProxyService.ACTION_START
-                putExtra(ProxyService.EXTRA_BIND_IP, bindIp)
-                putExtra(ProxyService.EXTRA_PORT, port)
-                putExtra(ProxyService.EXTRA_IPS, parsedIps)
-                putExtra(ProxyService.EXTRA_POOL_SIZE, poolSize)
-                putExtra(ProxyService.EXTRA_CFPROXY_ENABLED, cfEnabled)
-                putExtra(ProxyService.EXTRA_CFPROXY_PRIORITY, true)
-                putExtra(
-                    ProxyService.EXTRA_CFPROXY_DOMAIN,
-                    if (customCfDomainEnabled && cfEnabled) customCfDomain else ""
-                )
-                putExtra(ProxyService.EXTRA_SECRET_KEY, secretKey)
-            }
+        return ProxyLaunchConfig(
+            bindIp = bindIp,
+            port = port,
+            ips = parsedIps,
+            poolSize = poolSize,
+            cfEnabled = cfEnabled,
+            cfPriority = true,
+            cfDomain = if (customCfDomainEnabled && cfEnabled) customCfDomain else "",
+            secretKey = secretKey
         )
-        ProxyTileService.requestSync(context)
-        return true
+    }
+
+    suspend fun startFromSavedSettings(
+        context: Context,
+        showInvalidPortToast: Boolean = false
+    ): Boolean {
+        val config = loadConfig(context)
+        if (config == null) {
+            if (showInvalidPortToast) {
+                Toast.makeText(context, context.getString(R.string.invalid_port), Toast.LENGTH_SHORT).show()
+            }
+            ProxyTileService.requestSync(context)
+            return false
+        }
+
+        return try {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, ProxyService::class.java).apply {
+                    action = ProxyService.ACTION_START
+                    putExtra(ProxyService.EXTRA_BIND_IP, config.bindIp)
+                    putExtra(ProxyService.EXTRA_PORT, config.port)
+                    putExtra(ProxyService.EXTRA_IPS, config.ips)
+                    putExtra(ProxyService.EXTRA_POOL_SIZE, config.poolSize)
+                    putExtra(ProxyService.EXTRA_CFPROXY_ENABLED, config.cfEnabled)
+                    putExtra(ProxyService.EXTRA_CFPROXY_PRIORITY, config.cfPriority)
+                    putExtra(ProxyService.EXTRA_CFPROXY_DOMAIN, config.cfDomain)
+                    putExtra(ProxyService.EXTRA_SECRET_KEY, config.secretKey)
+                }
+            )
+            ProxyTileService.requestSync(context)
+            true
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to start foreground service from saved settings", e)
+            false
+        }
     }
 
     fun stop(context: Context) {
-        context.startService(
-            Intent(context, ProxyService::class.java).apply {
-                action = ProxyService.ACTION_STOP
-            }
-        )
-        ProxyTileService.requestSync(context)
+        val appContext = context.applicationContext
+        try {
+            appContext.startService(
+                Intent(appContext, ProxyService::class.java).apply {
+                    action = ProxyService.ACTION_STOP
+                }
+            )
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to stop proxy service", e)
+        }
+        ProxyTileService.requestSync(appContext)
     }
 
-    private suspend fun ensureSecretKey(settingsStore: SettingsStore): String {
+    internal suspend fun ensureSecretKey(settingsStore: SettingsStore): String {
         val current = settingsStore.secretKey.first().trim()
         if (isValidSecret(current)) {
             return current

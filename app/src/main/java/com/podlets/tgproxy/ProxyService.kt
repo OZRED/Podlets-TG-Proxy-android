@@ -85,15 +85,19 @@ class ProxyService : Service() {
         when (intent?.action) {
             ACTION_START -> {
                 LogManager.clearLogs()
-                val bindIp = intent.getStringExtra(EXTRA_BIND_IP) ?: "127.0.0.1"
-                val port = intent.getIntExtra(EXTRA_PORT, 1443)
-                val ips = intent.getStringExtra(EXTRA_IPS) ?: ""
-                val poolSize = intent.getIntExtra(EXTRA_POOL_SIZE, 4)
-                val cfEnabled = intent.getBooleanExtra(EXTRA_CFPROXY_ENABLED, true)
-                val cfPriority = intent.getBooleanExtra(EXTRA_CFPROXY_PRIORITY, true)
-                val cfDomain = intent.getStringExtra(EXTRA_CFPROXY_DOMAIN) ?: ""
-                val secretKey = intent.getStringExtra(EXTRA_SECRET_KEY) ?: ""
-                startProxy(bindIp, port, ips, poolSize, cfEnabled, cfPriority, cfDomain, secretKey)
+                val secretKey = intent.getStringExtra(EXTRA_SECRET_KEY)
+                if (secretKey.isNullOrEmpty()) {
+                    startProxyFromSavedSettings()
+                } else {
+                    val bindIp = intent.getStringExtra(EXTRA_BIND_IP) ?: "127.0.0.1"
+                    val port = intent.getIntExtra(EXTRA_PORT, 1443)
+                    val ips = intent.getStringExtra(EXTRA_IPS) ?: ""
+                    val poolSize = intent.getIntExtra(EXTRA_POOL_SIZE, 4)
+                    val cfEnabled = intent.getBooleanExtra(EXTRA_CFPROXY_ENABLED, true)
+                    val cfPriority = intent.getBooleanExtra(EXTRA_CFPROXY_PRIORITY, true)
+                    val cfDomain = intent.getStringExtra(EXTRA_CFPROXY_DOMAIN) ?: ""
+                    startProxy(bindIp, port, ips, poolSize, cfEnabled, cfPriority, cfDomain, secretKey)
+                }
             }
             ACTION_STOP -> {
                 stopProxy()
@@ -131,6 +135,63 @@ class ProxyService : Service() {
     }
 
 
+    private fun startProxyFromSavedSettings() {
+        if (_isRunning.value || stopInProgress) return
+        _isVerifiedRunning.value = false
+
+        notificationStartedAtMs = System.currentTimeMillis()
+        lastNotificationContent = getString(R.string.notification_starting)
+        lastNotificationAtMs = notificationStartedAtMs
+
+        val notification = createNotification(lastNotificationContent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+
+        acquireWakeLock()
+        stopInProgress = false
+
+        serviceScope.launch(Dispatchers.IO) {
+            val config = ProxyController.loadConfig(this@ProxyService)
+            if (config == null) {
+                val str = getString(R.string.invalid_port)
+                serviceScope.launch(Dispatchers.Main) {
+                    Toast.makeText(this@ProxyService, str, Toast.LENGTH_SHORT).show()
+                    updateNotification(str, force = true)
+                    stopProxy()
+                }
+                return@launch
+            }
+
+            // Save params for restart
+            lastBindIp = config.bindIp
+            lastPort = config.port
+            lastIps = config.ips
+            lastPoolSize = config.poolSize
+            lastCfEnabled = config.cfEnabled
+            lastCfPriority = config.cfPriority
+            lastCfDomain = config.cfDomain
+            lastSecretKey = config.secretKey
+
+            runProxyThread(
+                config.bindIp,
+                config.port,
+                config.ips,
+                config.poolSize,
+                config.cfEnabled,
+                config.cfPriority,
+                config.cfDomain,
+                config.secretKey
+            )
+        }
+    }
+
     private fun startProxy(bindIp: String, port: Int, ips: String, poolSize: Int = 4,
                            cfEnabled: Boolean = true, cfPriority: Boolean = true,
                            cfDomain: String = "", secretKey: String = "") {
@@ -163,7 +224,12 @@ class ProxyService : Service() {
 
         acquireWakeLock()
         stopInProgress = false
-        
+
+        runProxyThread(bindIp, port, ips, poolSize, cfEnabled, cfPriority, cfDomain, secretKey)
+    }
+
+    private fun runProxyThread(bindIp: String, port: Int, ips: String, poolSize: Int,
+                               cfEnabled: Boolean, cfPriority: Boolean, cfDomain: String, secretKey: String) {
         // Start Go proxy in a separate thread with error handling
         Thread({
             val canObtainPort = isPortAvailable(bindIp, port)
@@ -212,7 +278,7 @@ class ProxyService : Service() {
             start()
         }
 
-                    // Don't stop — it might start slightly later; let the user decide
+        statsJob?.cancel()
         // Stats updater. Notification updates are throttled so the system keeps
         // a stable foreground entry instead of constantly reordering it.
         statsJob = serviceScope.launch {
@@ -472,17 +538,11 @@ class ProxyService : Service() {
         val stopIntent = Intent(this, ProxyService::class.java).apply {
             action = ACTION_STOP
         }
-        val restartIntent = Intent(this, ProxyService::class.java).apply {
-            action = ACTION_RESTART
-        }
-        val restartPendingIntent = PendingIntent.getService(
-            this, 2, restartIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
         val stopPendingIntent = PendingIntent.getService(
             this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val fullSecret = NativeProxy.getSecretWithPrefix()
+        val fullSecret = runCatching { NativeProxy.getSecretWithPrefix() }.getOrNull()
             ?: if (lastSecretKey.isNotEmpty() && lastSecretKey != "LOADING") "dd$lastSecretKey" else "dd000000000000000000000000000000"
         val bindIp = lastBindIp.takeIf { it.isNotBlank() } ?: "127.0.0.1"
         val port = if (lastPort > 0) lastPort else 1443
@@ -501,7 +561,6 @@ class ProxyService : Service() {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(openPendingIntent) // Tap notification → open app
             .addAction(R.drawable.ic_notification, getString(R.string.notification_connect_proxy), connectPendingIntent)
-            .addAction(android.R.drawable.ic_popup_sync, getString(R.string.notification_restart), restartPendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.notification_disconnect), stopPendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

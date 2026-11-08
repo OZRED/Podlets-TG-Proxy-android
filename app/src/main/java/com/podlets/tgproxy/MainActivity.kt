@@ -2,6 +2,7 @@ package com.podlets.tgproxy
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -82,6 +83,10 @@ import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        const val ACTION_START_PROXY = "com.podlets.tgproxy.ACTION_START_PROXY"
+    }
+
     private val searchViewModel: SearchViewModel by viewModels()
 
     override fun attachBaseContext(newBase: Context) {
@@ -100,6 +105,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent(intent)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -168,6 +174,20 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == ACTION_START_PROXY) {
+            lifecycleScope.launch {
+                ProxyController.startFromSavedSettings(this@MainActivity, showInvalidPortToast = true)
             }
         }
     }
