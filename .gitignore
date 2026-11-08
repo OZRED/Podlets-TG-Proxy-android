@@ -1,0 +1,39 @@
+# Локальный референс-оригинал (не коммитим)
+tg-ws-proxy-main/
+
+# Gradle / Android build outputs
+.kotlin/
+.gradle/
+build/
+app/build/
+app/release/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+
+# Native libs (pre-compiled libtgwsproxy.so is tracked for direct APK builds)
+# app/src/main/jniLibs/
+
+# Локальная конфигурация и секреты — НЕ коммитить
+local.properties
+*.jks
+*.keystore
+release.keystore
+gradle/gradle-daemon-jvm.properties
+
+# Внутренние инструкции AI ассистента
+AGENTS.md
+
+# Rust
+target/
+**/*.rs.bk
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
