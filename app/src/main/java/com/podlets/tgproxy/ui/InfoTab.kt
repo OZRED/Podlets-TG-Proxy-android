@@ -409,7 +409,7 @@ private fun InfoHeroCard(onSupportClick: () -> Unit) {
                         modifier = Modifier.weight(1f)
                     )
                     HeroMetaPill(
-                        text = "Release v1.0.0",
+                        text = "Release v${BuildConfig.VERSION_NAME.removePrefix("v")}",
                         containerColor = colors.primary.copy(alpha = if (isDark) 0.18f else 0.10f),
                         borderColor = colors.primary.copy(alpha = if (isDark) 0.22f else 0.14f),
                         modifier = Modifier.weight(1f)

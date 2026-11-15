@@ -61,6 +61,7 @@ import com.podlets.tgproxy.ui.SearchProxyTab
 import com.podlets.tgproxy.ui.SearchViewModel
 import com.podlets.tgproxy.ui.SettingsTab
 import com.podlets.tgproxy.ui.TgWsProxyTheme
+import com.podlets.tgproxy.ui.TelegramLauncher
 import com.podlets.tgproxy.ui.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,8 +187,22 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == ACTION_START_PROXY) {
+            intent.action = null
+            setIntent(Intent(this, MainActivity::class.java))
             lifecycleScope.launch {
-                ProxyController.startFromSavedSettings(this@MainActivity, showInvalidPortToast = true)
+                val config = ProxyController.loadConfig(this@MainActivity)
+                val started = ProxyController.startFromSavedSettings(this@MainActivity, showInvalidPortToast = true)
+                if (started && config != null) {
+                    val proxyUrl = ProxyController.getLocalProxyUrl(config)
+                    TelegramLauncher.openProxyUrl(this@MainActivity, proxyUrl)
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_CLOSE, 0, 0)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        overridePendingTransition(0, 0)
+                    }
+                    finishAndRemoveTask()
+                }
             }
         }
     }

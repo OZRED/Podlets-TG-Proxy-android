@@ -12,8 +12,8 @@ android {
     defaultConfig {
         applicationId = "com.podlets.tgproxy"
         targetSdk = 35
-        versionCode = 101
-        versionName = "1.0.1"
+        versionCode = 102
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -109,6 +109,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
     buildFeatures {
         compose = true

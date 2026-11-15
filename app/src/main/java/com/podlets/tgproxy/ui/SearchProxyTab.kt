@@ -820,7 +820,7 @@ private fun ProxyCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (!isCustomCheck && !isRechecking && entry.isAvailable && entry.reactionsCount > 0) {
+                        if (!isCustomCheck && !isRechecking && entry.isAvailable) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = PingColor.StarGold.copy(alpha = 0.15f)

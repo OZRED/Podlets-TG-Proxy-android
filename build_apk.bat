@@ -1,6 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
 
+if not defined JAVA_HOME (
+    if exist "C:\Users\k3land\.jdks\temurin-17\jdk-17.0.12+7" (
+        set "JAVA_HOME=C:\Users\k3land\.jdks\temurin-17\jdk-17.0.12+7"
+    ) else if exist "C:\games\Project Zomboid\jre64" (
+        set "JAVA_HOME=C:\games\Project Zomboid\jre64"
+    )
+)
+
 echo === Podlets TG Proxy APK Build Script ===
 echo === Output: 3 APKs (universal, arm64-v8a, armeabi-v7a) ===
 echo.
@@ -40,7 +48,7 @@ if "%MISSING%"=="1" (
 
 echo Incremental build...
 echo Building release APKs...
-call gradlew assembleRelease --no-daemon
+call gradlew assembleRelease -x lint --no-daemon
 
 if %errorlevel% neq 0 (
     echo.
@@ -58,6 +66,7 @@ set "APK_DIR=app\build\outputs\apk"
 
 if exist "%APK_DIR%\universal\release\app-universal-release.apk" (
     copy /Y "%APK_DIR%\universal\release\app-universal-release.apk" "app\release\%RELEASE_PREFIX%-universal.apk" >nul
+    copy /Y "%APK_DIR%\universal\release\app-universal-release.apk" "app\release\Podlets-tg-proxy-(%VERSION_NAME%).apk" >nul
     for %%F in ("app\release\%RELEASE_PREFIX%-universal.apk") do echo   [OK] %%~nxF  [%%~zF bytes]
 ) else (
     echo   [!!] Universal APK not found

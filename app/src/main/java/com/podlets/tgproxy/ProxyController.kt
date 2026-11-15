@@ -126,6 +126,18 @@ object ProxyController {
         }
     }
 
+    fun getLocalProxyUrl(config: ProxyLaunchConfig): String {
+        val secret = if (config.cfEnabled && config.cfDomain.isNotBlank()) {
+            val domainHex = config.cfDomain.trim().toByteArray(Charsets.UTF_8).joinToString("") { "%02x".format(it) }
+            "ee${config.secretKey}$domainHex"
+        } else {
+            "dd${config.secretKey}"
+        }
+        val bindIp = config.bindIp.trim().ifEmpty { "127.0.0.1" }
+        val port = if (config.port > 0) config.port else 1443
+        return "tg://proxy?server=$bindIp&port=$port&secret=$secret"
+    }
+
     fun stop(context: Context) {
         val appContext = context.applicationContext
         try {

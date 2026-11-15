@@ -50,7 +50,11 @@ class ProxyTileService : TileService() {
         } else {
             val intent = Intent(this, MainActivity::class.java).apply {
                 action = MainActivity.ACTION_START_PROXY
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_NO_HISTORY or
+                        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 val pendingIntent = PendingIntent.getActivity(
