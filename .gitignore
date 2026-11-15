@@ -26,6 +26,7 @@ gradle/gradle-daemon-jvm.properties
 
 # Внутренние инструкции AI ассистента
 AGENTS.md
+.gemini/
 
 # Rust
 target/
